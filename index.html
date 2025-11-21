@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="パズル&ドラゴンズ風のパズルゲーム - たまを動かして連鎖させよう！">
+    <title>パズル&ドラゴンズ風パズル</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="game-header">
+            <h1>パズル&ドラゴンズ</h1>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">コンボ</span>
+                    <span class="stat-value" id="combo-count">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">スコア</span>
+                    <span class="stat-value" id="score">0</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="game-board-container">
+            <canvas id="game-board"></canvas>
+            <div id="particle-container"></div>
+        </div>
+
+        <div class="controls">
+            <div class="control-section">
+                <h3>ドロップの種類</h3>
+                <div class="orb-selector">
+                    <label class="orb-option">
+                        <input type="checkbox" value="fire" checked>
+                        <span class="orb-preview fire"></span>
+                        <span class="orb-name">火</span>
+                    </label>
+                    <label class="orb-option">
+                        <input type="checkbox" value="water" checked>
+                        <span class="orb-preview water"></span>
+                        <span class="orb-name">水</span>
+                    </label>
+                    <label class="orb-option">
+                        <input type="checkbox" value="wood" checked>
+                        <span class="orb-preview wood"></span>
+                        <span class="orb-name">木</span>
+                    </label>
+                    <label class="orb-option">
+                        <input type="checkbox" value="light" checked>
+                        <span class="orb-preview light"></span>
+                        <span class="orb-name">光</span>
+                    </label>
+                    <label class="orb-option">
+                        <input type="checkbox" value="dark" checked>
+                        <span class="orb-preview dark"></span>
+                        <span class="orb-name">闇</span>
+                    </label>
+                    <label class="orb-option">
+                        <input type="checkbox" value="heal">
+                        <span class="orb-preview heal"></span>
+                        <span class="orb-name">回復</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>設定</h3>
+                <div class="settings">
+                    <label class="setting-item">
+                        <span>ボードサイズ</span>
+                        <select id="board-size">
+                            <option value="5">5×4</option>
+                            <option value="6" selected>6×5</option>
+                            <option value="7">7×6</option>
+                        </select>
+                    </label>
+                    <button id="reset-board" class="btn-primary">ボードをリセット</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

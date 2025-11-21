@@ -1,0 +1,389 @@
+:root {
+    --color-fire: linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%);
+    --color-water: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --color-wood: linear-gradient(135deg, #38ef7d 0%, #11998e 100%);
+    --color-light: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+    --color-dark: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --color-heal: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    
+    --bg-primary: #0f0f23;
+    --bg-secondary: #1a1a2e;
+    --bg-card: rgba(255, 255, 255, 0.05);
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0b0;
+    --accent-glow: rgba(100, 200, 255, 0.3);
+    
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 20px var(--accent-glow);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Noto Sans JP', 'Outfit', sans-serif;
+    background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: pan-y;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header Styles */
+.game-header {
+    text-align: center;
+    margin-bottom: 30px;
+    animation: slideDown 0.6s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.game-header h1 {
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    font-weight: 900;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 20px;
+    text-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+    letter-spacing: 2px;
+}
+
+.stats {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 15px 30px;
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.stat-value {
+    display: block;
+    font-size: 2rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Game Board Container */
+.game-board-container {
+    position: relative;
+    margin: 30px auto;
+    max-width: 600px;
+    animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+#game-board {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg), 0 0 40px rgba(102, 126, 234, 0.3);
+    background: var(--bg-secondary);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    touch-action: none;
+}
+
+#particle-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    border-radius: 20px;
+}
+
+.particle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: particleFloat 1s ease-out forwards;
+}
+
+@keyframes particleFloat {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(var(--tx), var(--ty)) scale(0);
+    }
+}
+
+/* Controls */
+.controls {
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: var(--shadow-md);
+    animation: slideUp 0.8s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.control-section {
+    margin-bottom: 25px;
+}
+
+.control-section:last-child {
+    margin-bottom: 0;
+}
+
+.control-section h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: var(--text-primary);
+}
+
+/* Orb Selector */
+.orb-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 15px;
+}
+
+.orb-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.orb-option:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.orb-option input[type="checkbox"] {
+    display: none;
+}
+
+.orb-option input[type="checkbox"]:checked + .orb-preview {
+    box-shadow: 0 0 20px currentColor, var(--shadow-md);
+    transform: scale(1.1);
+}
+
+.orb-option input[type="checkbox"]:not(:checked) + .orb-preview {
+    opacity: 0.3;
+    filter: grayscale(0.8);
+}
+
+.orb-preview {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.orb-preview.fire {
+    background: var(--color-fire);
+    color: #ff4757;
+}
+
+.orb-preview.water {
+    background: var(--color-water);
+    color: #00f2fe;
+}
+
+.orb-preview.wood {
+    background: var(--color-wood);
+    color: #38ef7d;
+}
+
+.orb-preview.light {
+    background: var(--color-light);
+    color: #ffd89b;
+}
+
+.orb-preview.dark {
+    background: var(--color-dark);
+    color: #667eea;
+}
+
+.orb-preview.heal {
+    background: var(--color-heal);
+    color: #fa709a;
+}
+
+.orb-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+/* Settings */
+.settings {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.setting-item select {
+    padding: 8px 15px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.setting-item select:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-md);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg), 0 0 20px rgba(102, 126, 234, 0.5);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .orb-selector {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .stats {
+        gap: 15px;
+    }
+    
+    .stat-item {
+        padding: 10px 20px;
+    }
+}
+
+/* Combo Animation */
+@keyframes comboPopup {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.3);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.combo-popup {
+    animation: comboPopup 0.3s ease-out;
+}
