@@ -1,0 +1,51 @@
+/* ドロップ画像のプレビュー表示用スタイル */
+.orb-preview {
+    background-size: cover !important;
+    /* 画像を引き伸ばして枠に合わせる */
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    width: 40px;
+    height: 40px;
+    display: inline-block;
+}
+
+/* 各ドロップの画像設定 */
+.orb-preview.fire {
+    background-image: url('img/fire.png');
+    background-color: #ff4757;
+    /* 画像読み込み前のフォールバック色 */
+    border-radius: 50%;
+}
+
+.orb-preview.water {
+    background-image: url('img/water.png');
+    background-color: #00f2fe;
+    border-radius: 50%;
+}
+
+.orb-preview.wood {
+    background-image: url('img/wood.png');
+    background-color: #38ef7d;
+    border-radius: 50%;
+}
+
+.orb-preview.light {
+    background-image: url('img/light.png');
+    background-color: #ffd89b;
+    border-radius: 50%;
+}
+
+.orb-preview.dark {
+    background-image: url('img/dark.png');
+    background-color: #667eea;
+    border-radius: 50%;
+}
+
+.orb-preview.heal {
+    background-image: url('img/heal.png');
+    background-color: #fa709a;
+    border-radius: 8px;
+    /* 回復ドロップは角丸四角形 */
+}

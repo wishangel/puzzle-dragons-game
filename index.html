@@ -1,15 +1,20 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="パズル&ドラゴンズ風のパズルゲーム - たまを動かして連鎖させよう！">
     <title>パズル&ドラゴンズ風パズル</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="orb-preview-override.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Outfit:wght@400;600;800&display=swap"
+        rel="stylesheet">
 </head>
+
 <body>
     <div class="container">
         <header class="game-header">
@@ -22,6 +27,14 @@
                 <div class="stat-item">
                     <span class="stat-label">スコア</span>
                     <span class="stat-value" id="score">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">ハイスコア</span>
+                    <span class="stat-value" id="high-score">0</span>
+                </div>
+                <div class="stat-item" id="timer-display" style="display: none;">
+                    <span class="stat-label">残り時間</span>
+                    <span class="stat-value" id="timer">60</span>
                 </div>
             </div>
         </header>
@@ -79,12 +92,54 @@
                             <option value="7">7×6</option>
                         </select>
                     </label>
+                    <label class="setting-item">
+                        <span>サウンド</span>
+                        <input type="checkbox" id="sound-toggle">
+                    </label>
+                    <label class="setting-item">
+                        <span>BGM</span>
+                        <input type="checkbox" id="bgm-toggle">
+                    </label>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>ゲームモード</h3>
+                <div class="game-mode-buttons">
+                    <button id="time-attack-btn" class="btn-secondary">タイムアタック開始</button>
                     <button id="reset-board" class="btn-primary">ボードをリセット</button>
+                    <button id="ranking-btn" class="btn-info"
+                        style="margin-top: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; width: 100%; padding: 15px; font-size: 1.2rem; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">ランキングを見る</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- ランキングモーダル -->
+    <div id="ranking-modal" class="modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-content"
+            style="background: #1a1a2e; padding: 20px; border-radius: 15px; width: 90%; max-width: 500px; border: 1px solid rgba(255,255,255,0.1);">
+            <h2 style="color: #fff; text-align: center; margin-bottom: 20px;">ランキング</h2>
+            <div class="ranking-tabs" style="display: flex; justify-content: center; margin-bottom: 20px; gap: 10px;">
+                <button id="tab-normal" class="btn-skill active">通常モード</button>
+                <button id="tab-timeattack" class="btn-skill">タイムアタック</button>
+            </div>
+            <div id="ranking-list" style="color: #fff; max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
+                <p style="text-align: center;">読み込み中...</p>
+            </div>
+            <button id="close-ranking" class="btn-primary" style="width: 100%;">閉じる</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- Firebase Manager -->
+    <script src="firebase-manager.js"></script>
     <script src="script.js"></script>
+    <script src="bgm-control.js"></script>
 </body>
+
 </html>

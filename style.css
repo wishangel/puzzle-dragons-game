@@ -5,14 +5,14 @@
     --color-light: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
     --color-dark: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     --color-heal: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-    
+
     --bg-primary: #0f0f23;
     --bg-secondary: #1a1a2e;
     --bg-card: rgba(255, 255, 255, 0.05);
     --text-primary: #ffffff;
     --text-secondary: #a0a0b0;
     --accent-glow: rgba(100, 200, 255, 0.3);
-    
+
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
@@ -53,6 +53,7 @@ body {
         opacity: 0;
         transform: translateY(-30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -124,6 +125,7 @@ body {
         opacity: 0;
         transform: scale(0.95);
     }
+
     to {
         opacity: 1;
         transform: scale(1);
@@ -167,6 +169,7 @@ body {
         opacity: 1;
         transform: translate(0, 0) scale(1);
     }
+
     100% {
         opacity: 0;
         transform: translate(var(--tx), var(--ty)) scale(0);
@@ -189,6 +192,7 @@ body {
         opacity: 0;
         transform: translateY(30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -236,69 +240,8 @@ body {
     box-shadow: var(--shadow-md);
 }
 
-.orb-option input[type="checkbox"] {
-    display: none;
-}
-
-.orb-option input[type="checkbox"]:checked + .orb-preview {
-    box-shadow: 0 0 20px currentColor, var(--shadow-md);
-    transform: scale(1.1);
-}
-
-.orb-option input[type="checkbox"]:not(:checked) + .orb-preview {
-    opacity: 0.3;
-    filter: grayscale(0.8);
-}
-
-.orb-preview {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    transition: all 0.3s ease;
-    box-shadow: var(--shadow-sm);
-}
-
-.orb-preview.fire {
-    background: var(--color-fire);
-    color: #ff4757;
-}
-
-.orb-preview.water {
-    background: var(--color-water);
-    color: #00f2fe;
-}
-
-.orb-preview.wood {
-    background: var(--color-wood);
-    color: #38ef7d;
-}
-
-.orb-preview.light {
-    background: var(--color-light);
-    color: #ffd89b;
-}
-
-.orb-preview.dark {
-    background: var(--color-dark);
-    color: #667eea;
-}
-
-.orb-preview.heal {
-    background: var(--color-heal);
-    color: #fa709a;
-}
-
-.orb-name {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-}
-
-/* Settings */
-.settings {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+flex-direction: column;
+gap: 15px;
 }
 
 .setting-item {
@@ -357,15 +300,15 @@ body {
     .container {
         padding: 15px;
     }
-    
+
     .orb-selector {
         grid-template-columns: repeat(3, 1fr);
     }
-    
+
     .stats {
         gap: 15px;
     }
-    
+
     .stat-item {
         padding: 10px 20px;
     }
@@ -376,14 +319,188 @@ body {
     0% {
         transform: scale(1);
     }
+
     50% {
         transform: scale(1.3);
     }
+
     100% {
         transform: scale(1);
     }
 }
 
+
 .combo-popup {
     animation: comboPopup 0.3s ease-out;
+}
+
+/* Skill Buttons */
+.skill-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.btn-skill {
+    padding: 12px;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-skill:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md), 0 0 15px rgba(240, 147, 251, 0.5);
+}
+
+.btn-skill:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-skill:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+}
+
+/* Game Mode Buttons */
+.game-mode-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn-secondary {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #38ef7d 0%, #11998e 100%);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg), 0 0 20px rgba(56, 239, 125, 0.5);
+}
+
+.btn-secondary:active {
+    transform: translateY(0);
+}
+
+/* Checkbox Toggle */
+.setting-item input[type="checkbox"] {
+    width: 50px;
+    height: 26px;
+    position: relative;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.1);
+    outline: none;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.setting-item input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.setting-item input[type="checkbox"]::before {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    background: white;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.setting-item input[type="checkbox"]:checked::before {
+    left: 26px;
+}
+
+/* High Score Notification */
+.high-score-notification {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+    color: white;
+    padding: 30px 50px;
+    border-radius: 20px;
+    font-size: 2rem;
+    font-weight: 900;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.high-score-notification.show {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+}
+
+/* Timer Display */
+#timer-display {
+    animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Mobile Responsive Updates */
+@media (max-width: 768px) {
+    .stats {
+        gap: 10px;
+    }
+
+    .stat-item {
+        padding: 8px 15px;
+        min-width: 100px;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .skill-buttons {
+        grid-template-columns: 1fr;
+    }
+
+    .high-score-notification {
+        padding: 20px 30px;
+        font-size: 1.5rem;
+    }
 }
