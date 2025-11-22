@@ -33,6 +33,7 @@ class PuzzleGame {
         this.dragPath = [];
         this.score = 0;
         this.combo = 0;
+        this.scoreSaved = false;
         this.moveStartTime = 0;
         this.maxMoveTime = 5000;
 
@@ -264,6 +265,7 @@ class PuzzleGame {
         // ボードリセット時にスコアもリセット
         this.score = 0;
         this.combo = 0;
+        this.scoreSaved = false;
         this.updateScore();
 
         this.board = [];
@@ -313,6 +315,14 @@ class PuzzleGame {
         const row = Math.floor((pos.y - this.padding) / this.orbSize);
 
         if (col >= 0 && col < this.cols && row >= 0 && row < this.rows) {
+            // 通常モードなら操作開始時にスコアをリセット
+            if (!this.timeAttackMode) {
+                this.score = 0;
+                this.combo = 0;
+                this.scoreSaved = false;
+                this.updateScore();
+            }
+
             this.isDragging = true;
             this.selectedOrb = { row, col };
             this.dragPath = [{ row, col }];
@@ -403,6 +413,19 @@ class PuzzleGame {
             this.animateCombo();
             this.playSound('combo');
             this.saveHighScore();
+
+            // 通常プレイで1000点超えたら保存
+            if (!this.timeAttackMode && this.score >= 1000 && !this.scoreSaved) {
+                this.scoreSaved = true;
+                setTimeout(() => {
+                    if (window.firebaseManager) {
+                        const name = prompt("スコアが1000点を超えました！ランキングに登録する名前を入力してください:", "名無し");
+                        if (name) {
+                            window.firebaseManager.saveScore(name, this.score, 'normal');
+                        }
+                    }
+                }, 500);
+            }
         }
 
     }
@@ -839,8 +862,8 @@ class PuzzleGame {
         alert(`タイムアップ！ スコア: ${this.score}`);
         this.saveHighScore();
 
-        if (window.firebaseManager) {
-            const name = prompt("ランキングに登録する名前を入力してください:", "名無し");
+        if (window.firebaseManager && this.score >= 3000) {
+            const name = prompt("スコアが3000点を超えました！ランキングに登録する名前を入力してください:", "名無し");
             if (name) {
                 window.firebaseManager.saveScore(name, this.score, 'time_attack');
             }
