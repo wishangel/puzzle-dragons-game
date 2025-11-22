@@ -1219,13 +1219,17 @@ class PuzzleGame {
         // 実際のスマホスクショでは盤面は下部にあることが多い
         // アスペクト比などから調整が必要かもしれないが、まずは中央下部を狙う
 
-        // 盤面の幅と高さを推定（横幅の90%程度、アスペクト比6:5）
-        const boardWidth = img.width * 0.95;
+        // 盤面の幅と高さを推定（横幅の100%、アスペクト比6:5）
+        // 一般的なスマホ画面では横幅いっぱいに盤面が表示されることが多い
+        const boardWidth = img.width * 1.0;
         const boardHeight = boardWidth * (5 / 6);
 
-        // 盤面の開始位置（中央揃え、下から少し浮いた位置）
+        // 盤面の開始位置（下揃え）
+        // 画面下端から少し（高さの2%程度）浮いた位置に盤面があると仮定
+        // これにより、縦長画面でも盤面位置をより正確に捉えられる
+        const bottomMargin = img.height * 0.02;
         const startX = (img.width - boardWidth) / 2;
-        const startY = img.height * 0.5; // 画像の縦半分くらいから開始と仮定
+        const startY = img.height - boardHeight - bottomMargin;
 
         // グリッドサイズ
         const cellWidth = boardWidth / this.cols;
