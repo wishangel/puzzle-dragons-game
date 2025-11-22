@@ -242,14 +242,28 @@ class PuzzleGame {
 
         // 盤面編集モードボタン
         const editBoardBtn = document.getElementById('edit-board-btn');
+        console.log('[DEBUG] Edit button found:', !!editBoardBtn);
         if (editBoardBtn) {
-            editBoardBtn.addEventListener('click', () => this.toggleEditMode());
+            const handleToggle = (e) => {
+                console.log('[DEBUG] Edit button triggered, event:', e.type);
+                e.preventDefault();
+                e.stopPropagation();
+                this.toggleEditMode();
+            };
+            editBoardBtn.addEventListener('click', handleToggle);
+            editBoardBtn.addEventListener('touchend', handleToggle, { passive: false });
+            console.log('[DEBUG] Edit button listeners registered');
         }
 
         // 編集パレットの選択
         const paletteOrbs = document.querySelectorAll('.palette-orb');
+        console.log('[DEBUG] Palette orbs found:', paletteOrbs.length);
         paletteOrbs.forEach(orb => {
-            orb.addEventListener('click', (e) => {
+            const handleOrbSelect = (e) => {
+                console.log('[DEBUG] Palette orb selected:', e.currentTarget.dataset.type);
+                e.preventDefault();
+                e.stopPropagation();
+
                 // アクティブ状態の切り替え
                 paletteOrbs.forEach(o => {
                     o.classList.remove('active');
@@ -260,7 +274,9 @@ class PuzzleGame {
                 target.style.border = '2px solid yellow';
 
                 this.selectedEditOrb = target.dataset.type;
-            });
+            };
+            orb.addEventListener('click', handleOrbSelect);
+            orb.addEventListener('touchend', handleOrbSelect, { passive: false });
         });
 
         // サウンドトグル
@@ -291,23 +307,34 @@ class PuzzleGame {
     }
 
     toggleEditMode() {
+        console.log('[DEBUG] toggleEditMode called, current:', this.isEditing);
         this.isEditing = !this.isEditing;
         const palette = document.getElementById('edit-palette');
         const btn = document.getElementById('edit-board-btn');
+        console.log('[DEBUG] New mode:', this.isEditing ? 'EDIT' : 'NORMAL');
 
         if (this.isEditing) {
-            if (palette) palette.style.display = 'flex';
+            if (palette) {
+                palette.style.display = 'flex';
+                console.log('[DEBUG] Palette shown');
+            } else {
+                console.error('[DEBUG] Palette element not found!');
+            }
             if (btn) {
                 btn.textContent = '編集終了';
                 btn.classList.add('active');
+                console.log('[DEBUG] Button text changed to 編集終了');
             }
             this.canvas.style.cursor = 'crosshair';
-            // alert削除
         } else {
-            if (palette) palette.style.display = 'none';
+            if (palette) {
+                palette.style.display = 'none';
+                console.log('[DEBUG] Palette hidden');
+            }
             if (btn) {
                 btn.textContent = '盤面編集モード';
                 btn.classList.remove('active');
+                console.log('[DEBUG] Button text changed to 盤面編集モード');
             }
             this.canvas.style.cursor = 'default';
         }
