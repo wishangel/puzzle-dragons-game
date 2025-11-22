@@ -243,6 +243,14 @@ class PuzzleGame {
             assistRouteBtn.addEventListener('click', () => this.showAssistRoute());
         }
 
+        // 画像読み込みボタン
+        const loadImageBtn = document.getElementById('load-image-btn');
+        const boardImageInput = document.getElementById('board-image-input');
+        if (loadImageBtn && boardImageInput) {
+            loadImageBtn.addEventListener('click', () => boardImageInput.click());
+            boardImageInput.addEventListener('change', (e) => this.handleImageUpload(e));
+        }
+
         // サウンドトグル
         const soundToggle = document.getElementById('sound-toggle');
         if (soundToggle) {
@@ -1182,6 +1190,177 @@ class PuzzleGame {
             this.ctx.shadowColor = 'transparent';
             this.ctx.shadowBlur = 0;
         }
+    }
+
+    handleImageUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                this.analyzeBoardImage(img);
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    analyzeBoardImage(img) {
+        // 画像解析用のCanvasを作成
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        // 盤面領域の推定（簡易的に画像の下半分の中央を使用）
+        // 実際のスマホスクショでは盤面は下部にあることが多い
+        // アスペクト比などから調整が必要かもしれないが、まずは中央下部を狙う
+
+        // 盤面の幅と高さを推定（横幅の90%程度、アスペクト比6:5）
+        const boardWidth = img.width * 0.95;
+        const boardHeight = boardWidth * (5 / 6);
+
+        // 盤面の開始位置（中央揃え、下から少し浮いた位置）
+        const startX = (img.width - boardWidth) / 2;
+        const startY = img.height * 0.5; // 画像の縦半分くらいから開始と仮定
+
+        // グリッドサイズ
+        const cellWidth = boardWidth / this.cols;
+        const cellHeight = boardHeight / this.rows;
+
+        const newBoard = [];
+
+        for (let row = 0; row < this.rows; row++) {
+            const newRow = [];
+            for (let col = 0; col < this.cols; col++) {
+                // 各セルの中心付近の色を取得
+                const centerX = startX + col * cellWidth + cellWidth / 2;
+                const centerY = startY + row * cellHeight + cellHeight / 2;
+
+                // 中心周辺の平均色を取得（10x10ピクセル）
+                const pixelData = ctx.getImageData(centerX - 5, centerY - 5, 10, 10).data;
+                let r = 0, g = 0, b = 0;
+                for (let i = 0; i < pixelData.length; i += 4) {
+                    r += pixelData[i];
+                    g += pixelData[i + 1];
+                    b += pixelData[i + 2];
+                }
+                const count = pixelData.length / 4;
+                r = Math.round(r / count);
+                g = Math.round(g / count);
+                b = Math.round(b / count);
+
+                const type = this.detectOrbType(r, g, b);
+                newRow.push(type);
+            }
+            newBoard.push(newRow);
+        }
+
+        // 盤面を更新
+        this.board = newBoard;
+        this.draw();
+        alert('画像を読み込みました。盤面が正しくない場合は手動で調整してください（未実装）。');
+
+        // 入力をリセットして同じファイルを再度読み込めるようにする
+        document.getElementById('board-image-input').value = '';
+    }
+
+    detectOrbType(r, g, b) {
+        const [h, s, v] = this.rgbToHsv(r, g, b);
+
+        // HSV & RGB ハイブリッド判定
+
+        // 1. 闇 (Dark)
+        // 特徴: 暗い、または紫 (RとBが高く、Gが低い)
+        // 明度が極端に低い場合は無条件で闇
+        if (v < 35) return 'dark';
+
+        // 紫色判定: 色相が青紫〜赤紫、かつG成分がR, Bより低い
+        // 明るすぎる紫(ピンク寄り)は回復に回すため、明度上限を設けるか、Gとの差を見る
+        if ((h >= 230 && h <= 320) && r > g + 10 && b > g + 10) {
+            // 彩度が低すぎるとグレー(お邪魔?)や回復の可能性。闇は彩度がそこそこある
+            if (s > 20 && v < 85) return 'dark';
+        }
+
+        // 2. 回復 (Heal)
+        // 特徴: ピンク (R > B > G)、白っぽい (高明度・低彩度)
+        // 火との決定的な違いは「B成分の高さ」と「彩度の低さ」
+
+        // 白っぽさ判定: 明度が非常に高く、彩度が低い
+        if (v > 85 && s < 40) return 'heal';
+
+        // ピンク色判定: 色相が赤〜マゼンタ、かつB成分がしっかりある
+        // 火はB成分が非常に少ない
+        if ((h >= 290 || h <= 20) && b > 100 && b > g) {
+            return 'heal';
+        }
+
+        // 3. 火 (Fire)
+        // 特徴: 鮮やかな赤 (R >> G, B)
+        // 色相が赤付近で、彩度が高い
+        if ((h >= 330 || h <= 30) && s >= 45) {
+            // 念のためB成分が低めであることを確認 (回復との誤認防止)
+            if (b < r * 0.8) return 'fire';
+        }
+
+        // 4. その他の色 (光、木、水)
+
+        // 光 (黄): 色相が黄色
+        if (h >= 35 && h <= 85) return 'light';
+
+        // 木 (緑): 色相が緑
+        if (h >= 90 && h <= 160) return 'wood';
+
+        // 水 (青): 色相が青
+        if (h >= 170 && h <= 260) return 'water';
+
+        // フォールバック (判定漏れの場合の最終手段)
+        // RGBの最大値を持つ成分で判定
+        if (r > g && r > b) {
+            // 赤系: 火か回復か闇
+            if (b > g && b > r * 0.6) return 'heal'; // Bが多ければ回復
+            return 'fire';
+        }
+        if (b > r && b > g) {
+            // 青系: 水か闇
+            if (r > g && r > b * 0.6) return 'dark'; // Rも多ければ闇
+            return 'water';
+        }
+        if (g > r && g > b) return 'wood';
+
+        // それでも決まらない場合 (黄色系など)
+        if (r > 150 && g > 150) return 'light';
+
+        return 'heal'; // デフォルト
+    }
+
+    rgbToHsv(r, g, b) {
+        r /= 255;
+        g /= 255;
+        b /= 255;
+
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        let h, s, v = max;
+
+        const d = max - min;
+        s = max === 0 ? 0 : d / max;
+
+        if (max === min) {
+            h = 0; // achromatic
+        } else {
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+
+        return [h * 360, s * 100, v * 100];
     }
 
     displayRoute(route) {
