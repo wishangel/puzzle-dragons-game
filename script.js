@@ -948,7 +948,7 @@ class PuzzleGame {
                     btn.textContent = 'アシストルート';
                     btn.classList.remove('active');
                     btn.disabled = false;
-                }, 5000);
+                }, 10000);
             } else {
                 btn.textContent = 'アシストルート';
                 btn.disabled = false;
@@ -958,88 +958,118 @@ class PuzzleGame {
     }
 
     findBestRoute() {
+        const beamWidth = 100; // ビーム幅（各ステップで残す候補数）
+        const maxMoves = 35;   // 最大手数
+
         let bestRoute = null;
-        let bestScore = 0;
-        const maxMoves = 25;
+        let bestScore = -1;
 
-        // すべての開始位置を試す
-        for (let startRow = 0; startRow < this.rows; startRow++) {
-            for (let startCol = 0; startCol < this.cols; startCol++) {
-                // 各開始位置から複数のルートを試す
-                for (let attempt = 0; attempt < 10; attempt++) {
-                    const route = this.simulateRoute(startRow, startCol, maxMoves);
-                    if (route.score > bestScore) {
-                        bestScore = route.score;
-                        bestRoute = route;
+        // 初期状態の生成（全マスを開始点とする）
+        let currentStates = [];
+        for (let r = 0; r < this.rows; r++) {
+            for (let c = 0; c < this.cols; c++) {
+                currentStates.push({
+                    board: this.board.map(row => [...row]),
+                    cursor: { row: r, col: c },
+                    path: [{ row: r, col: c }],
+                    score: 0,
+                    combos: 0
+                });
+            }
+        }
+
+        // ビームサーチ実行
+        for (let move = 0; move < maxMoves; move++) {
+            let nextStates = [];
+            // 現在の候補数が多すぎる場合は、スコア順に絞り込む（ビーム幅制限）
+            if (currentStates.length > beamWidth) {
+                currentStates.sort((a, b) => b.score - a.score);
+                currentStates = currentStates.slice(0, beamWidth);
+            }
+
+            for (const state of currentStates) {
+                // 上下左右への移動を試行
+                const directions = [
+                    { dr: -1, dc: 0 }, { dr: 1, dc: 0 },
+                    { dr: 0, dc: -1 }, { dr: 0, dc: 1 }
+                ];
+
+                for (const dir of directions) {
+                    const newRow = state.cursor.row + dir.dr;
+                    const newCol = state.cursor.col + dir.dc;
+
+                    // 盤面外チェック
+                    if (newRow < 0 || newRow >= this.rows || newCol < 0 || newCol >= this.cols) {
+                        continue;
+                    }
+
+                    // 直前の位置に戻る移動は除外（無駄な往復を防ぐ）
+                    if (state.path.length > 1) {
+                        const prev = state.path[state.path.length - 2];
+                        if (prev.row === newRow && prev.col === newCol) {
+                            continue;
+                        }
+                    }
+
+                    // 新しい盤面状態を作成
+                    const newBoard = state.board.map(row => [...row]);
+                    // ドロップ交換
+                    const temp = newBoard[newRow][newCol];
+                    newBoard[newRow][newCol] = newBoard[state.cursor.row][state.cursor.col];
+                    newBoard[state.cursor.row][state.cursor.col] = temp;
+
+                    // 評価値の計算
+                    const combos = this.countCombos(newBoard);
+                    const potential = this.calculatePotential(newBoard);
+
+                    // スコア = コンボ数重視 + 潜在的な繋がり
+                    // コンボ数は大きく評価し、同コンボ数なら繋がりが多い方を優先
+                    const score = combos * 1000 + potential;
+
+                    const newState = {
+                        board: newBoard,
+                        cursor: { row: newRow, col: newCol },
+                        path: [...state.path, { row: newRow, col: newCol }],
+                        score: score,
+                        combos: combos
+                    };
+
+                    nextStates.push(newState);
+
+                    // ベストスコアの更新
+                    // コンボ数が増えた、または同じコンボ数でスコアが高い（形が良い）場合に更新
+                    if (combos > bestScore || (combos === bestScore && score > (bestRoute ? bestRoute.score : -1))) {
+                        bestScore = combos;
+                        bestRoute = newState;
                     }
                 }
-                // 貪欲法も試す
-                const greedyRoute = this.simulateGreedyRoute(startRow, startCol, maxMoves);
-                if (greedyRoute.score > bestScore) {
-                    bestScore = greedyRoute.score;
-                    bestRoute = greedyRoute;
-                }
             }
+
+            currentStates = nextStates;
+
+            // 探索候補がなくなったら終了
+            if (currentStates.length === 0) break;
         }
-        return bestRoute;
+
+        return bestRoute ? { path: bestRoute.path, combos: bestRoute.combos, score: bestRoute.score } : null;
     }
 
-    simulateRoute(startRow, startCol, maxMoves) {
-        const boardCopy = this.board.map(row => [...row]);
-        const path = [{ row: startRow, col: startCol }];
-        let currentRow = startRow, currentCol = startCol;
-
-        for (let move = 0; move < maxMoves; move++) {
-            const directions = [{ dr: -1, dc: 0 }, { dr: 1, dc: 0 }, { dr: 0, dc: -1 }, { dr: 0, dc: 1 }];
-            for (let i = directions.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [directions[i], directions[j]] = [directions[j], directions[i]];
+    // 潜在的なコンボの可能性（隣接ボーナス）を計算
+    calculatePotential(board) {
+        let potential = 0;
+        // 横方向の連結チェック
+        for (let r = 0; r < this.rows; r++) {
+            for (let c = 0; c < this.cols - 1; c++) {
+                if (board[r][c] === board[r][c + 1]) potential++;
             }
-            let moved = false;
-            for (const dir of directions) {
-                const newRow = currentRow + dir.dr, newCol = currentCol + dir.dc;
-                if (newRow >= 0 && newRow < this.rows && newCol >= 0 && newCol < this.cols) {
-                    [boardCopy[newRow][newCol], boardCopy[currentRow][currentCol]] = [boardCopy[currentRow][currentCol], boardCopy[newRow][newCol]];
-                    currentRow = newRow; currentCol = newCol;
-                    path.push({ row: currentRow, col: currentCol });
-                    moved = true; break;
-                }
-            }
-            if (!moved) break;
         }
-        return { path, combos: this.countCombos(boardCopy), score: this.countCombos(boardCopy) };
-    }
-
-    simulateGreedyRoute(startRow, startCol, maxMoves) {
-        const boardCopy = this.board.map(row => [...row]);
-        const path = [{ row: startRow, col: startCol }];
-        let currentRow = startRow, currentCol = startCol;
-
-        for (let move = 0; move < maxMoves; move++) {
-            const directions = [{ dr: -1, dc: 0 }, { dr: 1, dc: 0 }, { dr: 0, dc: -1 }, { dr: 0, dc: 1 }];
-            let bestDir = null, bestComboIncrease = -1;
-
-            for (const dir of directions) {
-                const newRow = currentRow + dir.dr, newCol = currentCol + dir.dc;
-                if (newRow >= 0 && newRow < this.rows && newCol >= 0 && newCol < this.cols) {
-                    const testBoard = boardCopy.map(row => [...row]);
-                    [testBoard[newRow][newCol], testBoard[currentRow][currentCol]] = [testBoard[currentRow][currentCol], testBoard[newRow][newCol]];
-                    const combos = this.countCombos(testBoard);
-                    if (combos > bestComboIncrease) {
-                        bestComboIncrease = combos;
-                        bestDir = dir;
-                    }
-                }
+        // 縦方向の連結チェック
+        for (let c = 0; c < this.cols; c++) {
+            for (let r = 0; r < this.rows - 1; r++) {
+                if (board[r][c] === board[r + 1][c]) potential++;
             }
-
-            if (bestDir) {
-                const newRow = currentRow + bestDir.dr, newCol = currentCol + bestDir.dc;
-                [boardCopy[newRow][newCol], boardCopy[currentRow][currentCol]] = [boardCopy[currentRow][currentCol], boardCopy[newRow][newCol]];
-                currentRow = newRow; currentCol = newCol;
-                path.push({ row: currentRow, col: currentCol });
-            } else break;
         }
-        return { path, combos: this.countCombos(boardCopy), score: this.countCombos(boardCopy) };
+        return potential;
     }
 
     countCombos(board) {
@@ -1067,34 +1097,128 @@ class PuzzleGame {
 
     drawAssistRoute() {
         if (!this.assistRoute || this.assistRoute.length < 2) return;
-        this.ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)';
+
+        // 1. ルート全体を薄く描画
+        this.ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
         this.ctx.lineWidth = 5;
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
-        this.ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
-        this.ctx.shadowBlur = 10;
+
         this.ctx.beginPath();
         for (let i = 0; i < this.assistRoute.length; i++) {
             const orb = this.assistRoute[i];
             const x = this.padding + orb.col * this.orbSize + this.orbSize / 2;
             const y = this.padding + orb.row * this.orbSize + this.orbSize / 2;
+
             if (i === 0) {
                 this.ctx.moveTo(x, y);
-                this.ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+                // 開始点を強調
+                this.ctx.fillStyle = 'rgba(255, 215, 0, 0.5)';
                 this.ctx.beginPath();
                 this.ctx.arc(x, y, this.orbSize / 2, 0, Math.PI * 2);
                 this.ctx.fill();
                 this.ctx.beginPath();
                 this.ctx.moveTo(x, y);
-            } else this.ctx.lineTo(x, y);
+            } else {
+                this.ctx.lineTo(x, y);
+            }
         }
         this.ctx.stroke();
-        this.ctx.shadowColor = 'transparent';
-        this.ctx.shadowBlur = 0;
+
+        // 2. アニメーション：現在の進行状況に合わせて濃い線を描画
+        if (this.assistRouteProgress > 0) {
+            this.ctx.strokeStyle = 'rgba(255, 215, 0, 1.0)';
+            this.ctx.lineWidth = 6;
+            this.ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+            this.ctx.shadowBlur = 15;
+
+            this.ctx.beginPath();
+            const startOrb = this.assistRoute[0];
+            let startX = this.padding + startOrb.col * this.orbSize + this.orbSize / 2;
+            let startY = this.padding + startOrb.row * this.orbSize + this.orbSize / 2;
+            this.ctx.moveTo(startX, startY);
+
+            // 進行状況（インデックス）までのパスを描画
+            const currentIndex = Math.floor(this.assistRouteProgress);
+            const progressFraction = this.assistRouteProgress - currentIndex;
+
+            for (let i = 1; i <= currentIndex && i < this.assistRoute.length; i++) {
+                const orb = this.assistRoute[i];
+                const x = this.padding + orb.col * this.orbSize + this.orbSize / 2;
+                const y = this.padding + orb.row * this.orbSize + this.orbSize / 2;
+                this.ctx.lineTo(x, y);
+            }
+
+            // 現在移動中の線分を描画
+            if (currentIndex < this.assistRoute.length - 1) {
+                const currentOrb = this.assistRoute[currentIndex];
+                const nextOrb = this.assistRoute[currentIndex + 1];
+
+                const curX = this.padding + currentOrb.col * this.orbSize + this.orbSize / 2;
+                const curY = this.padding + currentOrb.row * this.orbSize + this.orbSize / 2;
+
+                const nextX = this.padding + nextOrb.col * this.orbSize + this.orbSize / 2;
+                const nextY = this.padding + nextOrb.row * this.orbSize + this.orbSize / 2;
+
+                const interpX = curX + (nextX - curX) * progressFraction;
+                const interpY = curY + (nextY - curY) * progressFraction;
+
+                this.ctx.lineTo(interpX, interpY);
+
+                // 先端に光る点を描画
+                this.ctx.stroke(); // ここまでの線を一旦描画
+
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.shadowColor = '#ffffff';
+                this.ctx.shadowBlur = 10;
+                this.ctx.beginPath();
+                this.ctx.arc(interpX, interpY, 6, 0, Math.PI * 2);
+                this.ctx.fill();
+            } else {
+                this.ctx.stroke();
+            }
+
+            // 影をリセット
+            this.ctx.shadowColor = 'transparent';
+            this.ctx.shadowBlur = 0;
+        }
     }
 
-    displayRoute(route) { this.assistRoute = route.path; this.draw(); }
-    clearRoute() { this.assistRoute = null; this.draw(); }
+    displayRoute(route) {
+        this.assistRoute = route.path;
+        this.assistRouteProgress = 0;
+
+        // アニメーションループを開始
+        if (this.assistAnimationId) {
+            cancelAnimationFrame(this.assistAnimationId);
+        }
+
+        const animate = () => {
+            if (!this.assistRoute) return;
+
+            // 進行状況を進める (速度調整: 0.1 = 1フレームあたり0.1ステップ進む)
+            this.assistRouteProgress += 0.15;
+
+            // 最後まで到達したら最初に戻る（少し待機してから）
+            if (this.assistRouteProgress >= this.assistRoute.length + 5) {
+                this.assistRouteProgress = 0;
+            }
+
+            this.draw();
+            this.assistAnimationId = requestAnimationFrame(animate);
+        };
+
+        animate();
+    }
+
+    clearRoute() {
+        this.assistRoute = null;
+        if (this.assistAnimationId) {
+            cancelAnimationFrame(this.assistAnimationId);
+            this.assistAnimationId = null;
+        }
+        this.draw();
+    }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
