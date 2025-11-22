@@ -153,10 +153,14 @@ class PuzzleGame {
     }
 
     updateHighScoreDisplay() {
-        const highScoreElement = document.getElementById('high-score');
-        if (highScoreElement) {
-            const currentHighScore = this.timeAttackMode ? this.timeAttackHighScore : this.highScore;
-            highScoreElement.textContent = currentHighScore;
+        const normalHighScoreElement = document.getElementById('high-score-normal');
+        const timeAttackHighScoreElement = document.getElementById('high-score-timeattack');
+
+        if (normalHighScoreElement) {
+            normalHighScoreElement.textContent = this.highScore;
+        }
+        if (timeAttackHighScoreElement) {
+            timeAttackHighScoreElement.textContent = this.timeAttackHighScore;
         }
     }
 
