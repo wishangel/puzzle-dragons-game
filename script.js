@@ -35,7 +35,7 @@ class PuzzleGame {
         this.combo = 0;
         this.scoreSaved = false;
         this.moveStartTime = 0;
-        this.maxMoveTime = 5000;
+        this.maxMoveTime = 6000;
 
         // タイムアタックモード
         this.timeAttackMode = false;
