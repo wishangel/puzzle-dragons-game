@@ -240,10 +240,6 @@ body {
     box-shadow: var(--shadow-md);
 }
 
-flex-direction: column;
-gap: 15px;
-}
-
 .setting-item {
     display: flex;
     justify-content: space-between;
@@ -479,20 +475,21 @@ gap: 15px;
 /* Mobile Responsive Updates */
 @media (max-width: 768px) {
     .stats {
-        gap: 10px;
+        gap: 8px;
     }
 
     .stat-item {
-        padding: 8px 15px;
-        min-width: 100px;
+        padding: 8px 10px;
+        flex: 1;
+        min-width: 0;
     }
 
     .stat-label {
-        font-size: 0.75rem;
+        font-size: 0.65rem;
     }
 
     .stat-value {
-        font-size: 1.5rem;
+        font-size: 1.3rem;
     }
 
     .skill-buttons {
