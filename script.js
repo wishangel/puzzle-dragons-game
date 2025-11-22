@@ -66,16 +66,32 @@ class PuzzleGame {
         // 利用可能なドロップタイプ
         this.availableOrbTypes = ['fire', 'water', 'wood', 'light', 'dark'];
 
+        // パフォーマンス最適化用
+        this.needsRedraw = false;
+        this.dpr = window.devicePixelRatio || 1;
+        this.orbCache = {};
+        this.scoreEl = null;
+        this.comboEl = null;
+        this.highScoreNormalEl = null;
+        this.highScoreTimeAttackEl = null;
+
         this.init();
     }
 
     init() {
+        // DOM要素のキャッシュ
+        this.scoreEl = document.getElementById('score');
+        this.comboEl = document.getElementById('combo-count');
+        this.highScoreNormalEl = document.getElementById('high-score-normal');
+        this.highScoreTimeAttackEl = document.getElementById('high-score-timeattack');
+
         this.loadImages();
         this.initBGM();
         this.setupCanvas();
         this.setupEventListeners();
         this.initBoard();
         this.updateHighScoreDisplay();
+        this.startRenderLoop();
         this.draw();
     }
 
@@ -86,6 +102,8 @@ class PuzzleGame {
         Object.keys(this.orbColors).forEach(type => {
             const img = new Image();
             img.onload = () => {
+                this.cacheOrbImage(type, img);
+
                 loadedCount++;
                 if (loadedCount === imagesToLoad) {
                     this.imagesLoaded = true;
@@ -103,6 +121,41 @@ class PuzzleGame {
             img.src = this.orbColors[type].img;
             this.orbImages[type] = img;
         });
+    }
+
+    cacheOrbImage(type, img) {
+        // オフスクリーンキャンバスにリサイズ済みの画像をキャッシュ
+        const cacheCanvas = document.createElement('canvas');
+        // drawOrbでは radius = size/2 - 3 なので、直径は size - 6
+        const drawSize = Math.max(1, Math.floor((this.orbSize - 6) * this.dpr));
+
+        cacheCanvas.width = drawSize;
+        cacheCanvas.height = drawSize;
+        const ctx = cacheCanvas.getContext('2d');
+
+        // 画像を描画 (引き伸ばして表示)
+        const imgRatio = img.width / img.height;
+        let drawW, drawH, offsetX = 0, offsetY = 0;
+
+        if (imgRatio > 1) {
+            drawH = drawSize;
+            drawW = drawSize * imgRatio;
+            offsetX = -(drawW - drawSize) / 2;
+        } else {
+            drawW = drawSize;
+            drawH = drawSize / imgRatio;
+            offsetY = -(drawH - drawSize) / 2;
+        }
+
+        const scale = this.orbColors[type].scale || 1.0;
+        // 中心基準でスケール
+        const scaledW = drawW * scale;
+        const scaledH = drawH * scale;
+        offsetX += (drawW - scaledW) / 2;
+        offsetY += (drawH - scaledH) / 2;
+
+        ctx.drawImage(img, offsetX, offsetY, scaledW, scaledH);
+        this.orbCache[type] = cacheCanvas;
     }
 
     initBGM() {
@@ -157,14 +210,11 @@ class PuzzleGame {
     }
 
     updateHighScoreDisplay() {
-        const normalHighScoreElement = document.getElementById('high-score-normal');
-        const timeAttackHighScoreElement = document.getElementById('high-score-timeattack');
-
-        if (normalHighScoreElement) {
-            normalHighScoreElement.textContent = this.highScore;
+        if (this.highScoreNormalEl) {
+            this.highScoreNormalEl.textContent = this.highScore;
         }
-        if (timeAttackHighScoreElement) {
-            timeAttackHighScoreElement.textContent = this.timeAttackHighScore;
+        if (this.highScoreTimeAttackEl) {
+            this.highScoreTimeAttackEl.textContent = this.timeAttackHighScore;
         }
     }
 
@@ -178,12 +228,26 @@ class PuzzleGame {
         // 高さは行数に基づいて計算
         const containerHeight = this.orbSize * this.rows + this.padding * 2;
 
-        this.canvas.width = containerWidth;
-        this.canvas.height = containerHeight;
+        // Set real pixel size based on DPR
+        this.canvas.width = containerWidth * this.dpr;
+        this.canvas.height = containerHeight * this.dpr;
+
+        // Scale context back to CSS pixels
+        this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 
         // スタイルも合わせる
         this.canvas.style.width = `${containerWidth}px`;
         this.canvas.style.height = `${containerHeight}px`;
+
+        // キャッシュの再生成
+        if (this.imagesLoaded) {
+            Object.keys(this.orbImages).forEach(type => {
+                if (this.orbImages[type].complete) {
+                    this.cacheOrbImage(type, this.orbImages[type]);
+                }
+            });
+        }
+
         document.querySelectorAll('.orb-option input').forEach(checkbox => {
             checkbox.addEventListener('change', () => this.updateAvailableOrbs());
         });
@@ -297,12 +361,25 @@ class PuzzleGame {
     setupEventListeners() {
         // マウス操作
         this.canvas.addEventListener('mousedown', (e) => this.handleInputStart(e));
-        window.addEventListener('mousemove', (e) => this.handleInputMove(e));
-        window.addEventListener('mouseup', () => this.handleInputEnd());
 
         // タッチ操作
         this.canvas.addEventListener('touchstart', (e) => this.handleInputStart(e), { passive: false });
-        window.addEventListener('touchmove', (e) => this.handleInputMove(e), { passive: false });
+
+        // Throttled move events
+        let lastMoveTime = 0;
+        const MOVE_THROTTLE_MS = 16; // ~60fps
+
+        const throttledMove = (e) => {
+            const now = performance.now();
+            if (now - lastMoveTime < MOVE_THROTTLE_MS) return;
+            lastMoveTime = now;
+            this.handleInputMove(e);
+        };
+
+        window.addEventListener('mousemove', throttledMove);
+        window.addEventListener('touchmove', throttledMove, { passive: false });
+
+        window.addEventListener('mouseup', () => this.handleInputEnd());
         window.addEventListener('touchend', () => this.handleInputEnd());
     }
 
@@ -641,15 +718,16 @@ class PuzzleGame {
 
         const color = this.orbColors[type].glow;
 
-        for (let i = 0; i < 8; i++) {
+        // Reduced particle count to 3
+        for (let i = 0; i < 3; i++) {
             const particle = document.createElement('div');
             particle.className = 'particle';
             particle.style.left = `${absoluteX - rect.left}px`;
             particle.style.top = `${absoluteY - rect.top}px`;
             particle.style.background = color;
 
-            const angle = (Math.PI * 2 * i) / 8;
-            const distance = 50 + Math.random() * 30;
+            const angle = (Math.PI * 2 * i) / 3;
+            const distance = 30 + Math.random() * 15;
             const tx = Math.cos(angle) * distance;
             const ty = Math.sin(angle) * distance;
 
@@ -658,7 +736,7 @@ class PuzzleGame {
 
             this.particleContainer.appendChild(particle);
 
-            setTimeout(() => particle.remove(), 1000);
+            setTimeout(() => particle.remove(), 800);
         }
     }
 
@@ -695,9 +773,24 @@ class PuzzleGame {
         }
     }
 
+    startRenderLoop() {
+        const loop = () => {
+            if (this.needsRedraw) {
+                this.render();
+                this.needsRedraw = false;
+            }
+            requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+    }
+
     draw() {
+        this.needsRedraw = true;
+    }
+
+    render() {
         this.ctx.fillStyle = '#1a1a2e';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillRect(0, 0, this.canvas.width / this.dpr, this.canvas.height / this.dpr); // Clear with CSS coords
 
         if (!this.board || this.board.length !== this.rows) return;
 
@@ -740,8 +833,9 @@ class PuzzleGame {
         const centerY = y + size / 2;
         const radius = size / 2 - 3; // パディングを考慮して少し小さく
         const isHeal = type === 'heal';
+        const cacheCanvas = this.orbCache[type];
 
-        if (this.imagesLoaded && this.orbImages[type] && this.orbImages[type].complete) {
+        if (this.imagesLoaded && cacheCanvas) {
             this.ctx.save();
 
             // 影
@@ -767,41 +861,14 @@ class PuzzleGame {
             }
             this.ctx.clip();
 
-            // 画像を描画 (引き伸ばして表示)
-            const img = this.orbImages[type];
-            const imgRatio = img.width / img.height;
-
-            // アスペクト比を維持して描画（Cover）
-            let drawWidth, drawHeight;
-            let drawX, drawY;
-
-            if (imgRatio > 1) {
-                // 画像が横長の場合
-                drawHeight = size;
-                drawWidth = size * imgRatio;
-                drawX = x + (size - drawWidth) / 2;
-                drawY = y;
-            } else {
-                // 画像が縦長の場合
-                drawWidth = size;
-                drawHeight = size / imgRatio;
-                drawX = x;
-                drawY = y + (size - drawHeight) / 2;
-            }
-
-            // スケール適用
-            const scale = this.orbColors[type].scale || 1.0;
-            const originalWidth = drawWidth;
-            const originalHeight = drawHeight;
-
-            drawWidth *= scale;
-            drawHeight *= scale;
-
-            // 中心を維持してリサイズ
-            drawX += (originalWidth - drawWidth) / 2;
-            drawY += (originalHeight - drawHeight) / 2;
-
-            this.ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+            // キャッシュされた画像を描画
+            // cacheCanvasはdpr倍されているが、drawImageでsizeを指定すれば合うはず
+            // ただし、cacheCanvasは正方形(size-6)で作られている
+            // 描画先は centerX, centerY を中心とした radius*2 の領域
+            // radius = size/2 - 3 => radius*2 = size - 6
+            // なので、描画サイズは size - 6
+            const drawSize = size - 6;
+            this.ctx.drawImage(cacheCanvas, centerX - drawSize / 2, centerY - drawSize / 2, drawSize, drawSize);
 
             this.ctx.restore();
 
@@ -885,8 +952,8 @@ class PuzzleGame {
     }
 
     updateScore() {
-        document.getElementById('score').textContent = this.score;
-        document.getElementById('combo-count').textContent = this.combo;
+        if (this.scoreEl) this.scoreEl.textContent = this.score;
+        if (this.comboEl) this.comboEl.textContent = this.combo;
     }
 
     animateCombo() {
@@ -904,36 +971,29 @@ class PuzzleGame {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
 
-        const oscillator = this.audioContext.createOscillator();
-        const gainNode = this.audioContext.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
+        const createOsc = (freq, duration, gainVal) => {
+            const osc = this.audioContext.createOscillator();
+            const gain = this.audioContext.createGain();
+            osc.frequency.value = freq;
+            gain.gain.value = gainVal;
+            osc.connect(gain);
+            gain.connect(this.audioContext.destination);
+            osc.start();
+            osc.stop(this.audioContext.currentTime + duration);
+        };
 
         switch (type) {
             case 'move':
-                oscillator.frequency.value = 200;
-                gainNode.gain.value = 0.1;
-                oscillator.start();
-                oscillator.stop(this.audioContext.currentTime + 0.05);
+                createOsc(200, 0.05, 0.1);
                 break;
             case 'clear':
-                oscillator.frequency.value = 400;
-                gainNode.gain.value = 0.15;
-                oscillator.start();
-                oscillator.stop(this.audioContext.currentTime + 0.1);
+                createOsc(400, 0.1, 0.15);
                 break;
             case 'combo':
-                oscillator.frequency.value = 600;
-                gainNode.gain.value = 0.2;
-                oscillator.start();
-                oscillator.stop(this.audioContext.currentTime + 0.15);
+                createOsc(600, 0.15, 0.2);
                 break;
             case 'skill':
-                oscillator.frequency.value = 800;
-                gainNode.gain.value = 0.25;
-                oscillator.start();
-                oscillator.stop(this.audioContext.currentTime + 0.2);
+                createOsc(800, 0.2, 0.25);
                 break;
         }
     }
