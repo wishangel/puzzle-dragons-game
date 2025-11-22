@@ -237,6 +237,12 @@ class PuzzleGame {
             skill2Btn.addEventListener('click', () => this.useSkill2());
         }
 
+        // アシストルートボタン
+        const assistRouteBtn = document.getElementById('assist-route-btn');
+        if (assistRouteBtn) {
+            assistRouteBtn.addEventListener('click', () => this.showAssistRoute());
+        }
+
         // サウンドトグル
         const soundToggle = document.getElementById('sound-toggle');
         if (soundToggle) {
@@ -615,6 +621,7 @@ class PuzzleGame {
         }
 
         this.drawDragPath();
+        this.drawAssistRoute();
     }
 
     drawOrb(x, y, type, size) {
@@ -923,6 +930,171 @@ class PuzzleGame {
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
+
+    // アシストルートメソッド群
+    showAssistRoute() {
+        const btn = document.getElementById('assist-route-btn');
+        btn.textContent = '計算中...';
+        btn.disabled = true;
+
+        setTimeout(() => {
+            const bestRoute = this.findBestRoute();
+            if (bestRoute && bestRoute.combos >= 1) {
+                this.displayRoute(bestRoute);
+                btn.textContent = `ルート表示中 (${bestRoute.combos}コンボ)`;
+                btn.classList.add('active');
+                setTimeout(() => {
+                    this.clearRoute();
+                    btn.textContent = 'アシストルート';
+                    btn.classList.remove('active');
+                    btn.disabled = false;
+                }, 5000);
+            } else {
+                btn.textContent = 'アシストルート';
+                btn.disabled = false;
+                alert('有効なルートが見つかりませんでした');
+            }
+        }, 100);
+    }
+
+    findBestRoute() {
+        let bestRoute = null;
+        let bestScore = 0;
+        const maxMoves = 25;
+
+        // すべての開始位置を試す
+        for (let startRow = 0; startRow < this.rows; startRow++) {
+            for (let startCol = 0; startCol < this.cols; startCol++) {
+                // 各開始位置から複数のルートを試す
+                for (let attempt = 0; attempt < 10; attempt++) {
+                    const route = this.simulateRoute(startRow, startCol, maxMoves);
+                    if (route.score > bestScore) {
+                        bestScore = route.score;
+                        bestRoute = route;
+                    }
+                }
+                // 貪欲法も試す
+                const greedyRoute = this.simulateGreedyRoute(startRow, startCol, maxMoves);
+                if (greedyRoute.score > bestScore) {
+                    bestScore = greedyRoute.score;
+                    bestRoute = greedyRoute;
+                }
+            }
+        }
+        return bestRoute;
+    }
+
+    simulateRoute(startRow, startCol, maxMoves) {
+        const boardCopy = this.board.map(row => [...row]);
+        const path = [{ row: startRow, col: startCol }];
+        let currentRow = startRow, currentCol = startCol;
+
+        for (let move = 0; move < maxMoves; move++) {
+            const directions = [{ dr: -1, dc: 0 }, { dr: 1, dc: 0 }, { dr: 0, dc: -1 }, { dr: 0, dc: 1 }];
+            for (let i = directions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [directions[i], directions[j]] = [directions[j], directions[i]];
+            }
+            let moved = false;
+            for (const dir of directions) {
+                const newRow = currentRow + dir.dr, newCol = currentCol + dir.dc;
+                if (newRow >= 0 && newRow < this.rows && newCol >= 0 && newCol < this.cols) {
+                    [boardCopy[newRow][newCol], boardCopy[currentRow][currentCol]] = [boardCopy[currentRow][currentCol], boardCopy[newRow][newCol]];
+                    currentRow = newRow; currentCol = newCol;
+                    path.push({ row: currentRow, col: currentCol });
+                    moved = true; break;
+                }
+            }
+            if (!moved) break;
+        }
+        return { path, combos: this.countCombos(boardCopy), score: this.countCombos(boardCopy) };
+    }
+
+    simulateGreedyRoute(startRow, startCol, maxMoves) {
+        const boardCopy = this.board.map(row => [...row]);
+        const path = [{ row: startRow, col: startCol }];
+        let currentRow = startRow, currentCol = startCol;
+
+        for (let move = 0; move < maxMoves; move++) {
+            const directions = [{ dr: -1, dc: 0 }, { dr: 1, dc: 0 }, { dr: 0, dc: -1 }, { dr: 0, dc: 1 }];
+            let bestDir = null, bestComboIncrease = -1;
+
+            for (const dir of directions) {
+                const newRow = currentRow + dir.dr, newCol = currentCol + dir.dc;
+                if (newRow >= 0 && newRow < this.rows && newCol >= 0 && newCol < this.cols) {
+                    const testBoard = boardCopy.map(row => [...row]);
+                    [testBoard[newRow][newCol], testBoard[currentRow][currentCol]] = [testBoard[currentRow][currentCol], testBoard[newRow][newCol]];
+                    const combos = this.countCombos(testBoard);
+                    if (combos > bestComboIncrease) {
+                        bestComboIncrease = combos;
+                        bestDir = dir;
+                    }
+                }
+            }
+
+            if (bestDir) {
+                const newRow = currentRow + bestDir.dr, newCol = currentCol + bestDir.dc;
+                [boardCopy[newRow][newCol], boardCopy[currentRow][currentCol]] = [boardCopy[currentRow][currentCol], boardCopy[newRow][newCol]];
+                currentRow = newRow; currentCol = newCol;
+                path.push({ row: currentRow, col: currentCol });
+            } else break;
+        }
+        return { path, combos: this.countCombos(boardCopy), score: this.countCombos(boardCopy) };
+    }
+
+    countCombos(board) {
+        let comboCount = 0;
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.cols - 2; col++) {
+                const type = board[row][col];
+                if (!type) continue;
+                let matchLength = 1;
+                for (let c = col + 1; c < this.cols && board[row][c] === type; c++) matchLength++;
+                if (matchLength >= 3) { comboCount++; col += matchLength - 1; }
+            }
+        }
+        for (let col = 0; col < this.cols; col++) {
+            for (let row = 0; row < this.rows - 2; row++) {
+                const type = board[row][col];
+                if (!type) continue;
+                let matchLength = 1;
+                for (let r = row + 1; r < this.rows && board[r][col] === type; r++) matchLength++;
+                if (matchLength >= 3) { comboCount++; row += matchLength - 1; }
+            }
+        }
+        return comboCount;
+    }
+
+    drawAssistRoute() {
+        if (!this.assistRoute || this.assistRoute.length < 2) return;
+        this.ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)';
+        this.ctx.lineWidth = 5;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+        this.ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
+        this.ctx.shadowBlur = 10;
+        this.ctx.beginPath();
+        for (let i = 0; i < this.assistRoute.length; i++) {
+            const orb = this.assistRoute[i];
+            const x = this.padding + orb.col * this.orbSize + this.orbSize / 2;
+            const y = this.padding + orb.row * this.orbSize + this.orbSize / 2;
+            if (i === 0) {
+                this.ctx.moveTo(x, y);
+                this.ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, this.orbSize / 2, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.beginPath();
+                this.ctx.moveTo(x, y);
+            } else this.ctx.lineTo(x, y);
+        }
+        this.ctx.stroke();
+        this.ctx.shadowColor = 'transparent';
+        this.ctx.shadowBlur = 0;
+    }
+
+    displayRoute(route) { this.assistRoute = route.path; this.draw(); }
+    clearRoute() { this.assistRoute = null; this.draw(); }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
