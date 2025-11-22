@@ -1,0 +1,68 @@
+/* Edit Palette Styles */
+#edit-palette {
+    display: none;
+    margin-top: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 8px;
+}
+
+#edit-palette p {
+    margin: 0 0 8px 0;
+    font-size: 0.85rem;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-primary);
+}
+
+.palette-options {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+.palette-orb {
+    padding: 2px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.palette-orb:hover {
+    transform: scale(1.1);
+}
+
+.palette-orb.active {
+    border: 2px solid yellow !important;
+}
+
+/* Mobile optimizations for palette */
+@media (max-width: 768px) {
+    #edit-palette {
+        padding: 8px;
+    }
+
+    #edit-palette p {
+        font-size: 0.7rem;
+        margin-bottom: 6px;
+        /* 確実に横書きにする */
+        writing-mode: horizontal-tb;
+        text-orientation: mixed;
+    }
+
+    .palette-options {
+        gap: 3px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+
+    .palette-orb {
+        padding: 1px;
+        min-width: 32px;
+    }
+}
