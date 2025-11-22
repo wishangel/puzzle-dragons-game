@@ -7,6 +7,7 @@
     <meta name="description" content="パズル&ドラゴンズ風のパズルゲーム - たまを動かして連鎖させよう！">
     <title>パズル&ドラゴンズ風パズル</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="palette-styles.css">
     <link rel="stylesheet" href="orb-preview-override.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -120,29 +121,27 @@
                     <button id="edit-board-btn" class="btn-base btn-edit">盤面編集モード</button>
 
                     <!-- 編集パレット (初期状態は非表示) -->
-                    <div id="edit-palette"
-                        style="display: none; margin-top: 10px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px;">
-                        <p style="margin: 0 0 5px 0; font-size: 0.9rem;">配置するドロップを選択:</p>
-                        <div class="palette-options" style="display: flex; gap: 5px; justify-content: center;">
-                            <div class="palette-orb active" data-type="fire"
-                                style="border: 2px solid yellow; padding: 2px; border-radius: 50%; cursor: pointer;">
+                    <div id="edit-palette">
+                        <p>配置するドロップを選択:</p>
+                        <div class="palette-options">
+                            <div class="palette-orb active" data-type="fire">
                                 <span class="orb-preview fire"></span>
                             </div>
-                            <div class="palette-orb" data-type="water"
-                                style="padding: 2px; border-radius: 50%; cursor: pointer;"><span
-                                    class="orb-preview water"></span></div>
-                            <div class="palette-orb" data-type="wood"
-                                style="padding: 2px; border-radius: 50%; cursor: pointer;"><span
-                                    class="orb-preview wood"></span></div>
-                            <div class="palette-orb" data-type="light"
-                                style="padding: 2px; border-radius: 50%; cursor: pointer;"><span
-                                    class="orb-preview light"></span></div>
-                            <div class="palette-orb" data-type="dark"
-                                style="padding: 2px; border-radius: 50%; cursor: pointer;"><span
-                                    class="orb-preview dark"></span></div>
-                            <div class="palette-orb" data-type="heal"
-                                style="padding: 2px; border-radius: 50%; cursor: pointer;"><span
-                                    class="orb-preview heal"></span></div>
+                            <div class="palette-orb" data-type="water">
+                                <span class="orb-preview water"></span>
+                            </div>
+                            <div class="palette-orb" data-type="wood">
+                                <span class="orb-preview wood"></span>
+                            </div>
+                            <div class="palette-orb" data-type="light">
+                                <span class="orb-preview light"></span>
+                            </div>
+                            <div class="palette-orb" data-type="dark">
+                                <span class="orb-preview dark"></span>
+                            </div>
+                            <div class="palette-orb" data-type="heal">
+                                <span class="orb-preview heal"></span>
+                            </div>
                         </div>
                     </div>
 
