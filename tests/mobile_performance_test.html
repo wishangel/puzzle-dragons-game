@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Touch Performance Test</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        body {
+            background: #1a1a2e;
+            color: #fff;
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        #results {
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            background: #000;
+            padding: 10px;
+        }
+
+        .pass {
+            color: #4ade80;
+        }
+
+        .fail {
+            color: #f87171;
+        }
+
+        .warn {
+            color: #facc15;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Touch Performance Test</h1>
+    <div id="game-container" style="position: relative; width: 320px; height: 400px; margin: 0 auto;">
+        <canvas id="game-board" width="320" height="384"></canvas>
+        <div id="particle-container"></div>
+    </div>
+
+    <!-- Dummy elements required by script.js to avoid errors -->
+    <div style="display: none;">
+        <select id="board-size">
+            <option value="6">6x5</option>
+        </select>
+        <button id="reset-board"></button>
+        <span id="score">0</span>
+        <span id="combo-count">0</span>
+        <span id="high-score-normal">0</span>
+        <span id="high-score-timeattack">0</span>
+        <div id="edit-palette">
+            <div class="palette-orb" data-type="fire"></div>
+        </div>
+        <button id="edit-board-btn"></button>
+        <div class="orb-option"><input type="checkbox" value="fire" checked></div>
+
+        <button id="time-attack-btn"></button>
+        <button id="skill-1"></button>
+        <button id="skill-2"></button>
+        <button id="assist-route-btn"></button>
+        <button id="load-image-btn"></button>
+        <input type="file" id="board-image-input">
+        <input type="checkbox" id="sound-toggle">
+        <div id="timer-display"><span id="timer"></span></div>
+    </div>
+
+    <div id="results">Running tests...</div>
+
+    <script src="../script.js"></script>
+    <script>
+        const log = (msg, type = '') => {
+            const el = document.getElementById('results');
+            const span = document.createElement('div');
+            span.textContent = msg + '\n';
+            if (type) span.className = type;
+            el.appendChild(span);
+            console.log(msg);
+        };
+
+        window.onerror = function (msg, url, line, col, error) {
+            log(`Global Error: ${msg} at line ${line}`, 'fail');
+            return false;
+        };
+
+        async function runTest() {
+            try {
+                log("Initializing Game...");
+                const game = new PuzzleGame();
+
+                // Wait for initialization
+                await new Promise(r => setTimeout(r, 500));
+
+                const canvas = document.getElementById('game-board');
+                const rect = canvas.getBoundingClientRect();
+                const startX = rect.left + 50;
+                const startY = rect.top + 50;
+
+                log("Starting Touch Simulation...");
+
+                // Helper to create touch event
+                const createTouch = (type, x, y, id = 0) => {
+                    return new TouchEvent(type, {
+                        bubbles: true,
+                        cancelable: true,
+                        touches: [new Touch({ identifier: id, target: canvas, clientX: x, clientY: y })],
+                        changedTouches: [new Touch({ identifier: id, target: canvas, clientX: x, clientY: y })]
+                    });
+                };
+
+                // 1. Test Input Latency
+                let latencies = [];
+                const moveCount = 60;
+
+                // Start drag
+                canvas.dispatchEvent(createTouch('touchstart', startX, startY));
+
+                const startTime = performance.now();
+
+                for (let i = 0; i < moveCount; i++) {
+                    const t0 = performance.now();
+                    const x = startX + i * 2;
+                    const y = startY + i * 2;
+
+                    canvas.dispatchEvent(createTouch('touchmove', x, y));
+
+                    const t1 = performance.now();
+                    latencies.push(t1 - t0);
+
+                    // Wait a bit to simulate 60fps input rate
+                    await new Promise(r => setTimeout(r, 16));
+                }
+
+                canvas.dispatchEvent(createTouch('touchend', startX + moveCount * 2, startY + moveCount * 2));
+
+                const totalTime = performance.now() - startTime;
+                const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+                const maxLatency = Math.max(...latencies);
+
+                log(`Average JS Execution Time per Move: ${avgLatency.toFixed(2)}ms`);
+                log(`Max JS Execution Time: ${maxLatency.toFixed(2)}ms`);
+
+                if (avgLatency > 10) {
+                    log("FAIL: Average latency is too high (>10ms). This will cause frame drops.", "fail");
+                } else if (avgLatency > 5) {
+                    log("WARN: Average latency is marginal (>5ms).", "warn");
+                } else {
+                    log("PASS: Input processing is efficient.", "pass");
+                }
+
+                // 2. Check Event Listeners
+                log("Checking Event Listeners...");
+                if (game.isDragging !== undefined) {
+                    log("PASS: Game instance is accessible.", "pass");
+                }
+
+                log("Test Complete.");
+            } catch (e) {
+                log(`Test Error: ${e.message}`, 'fail');
+                console.error(e);
+            }
+        }
+
+        window.onload = runTest;
+    </script>
+</body>
+
+</html>

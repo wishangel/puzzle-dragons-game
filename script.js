@@ -370,6 +370,9 @@ class PuzzleGame {
         const MOVE_THROTTLE_MS = 16; // ~60fps
 
         const throttledMove = (e) => {
+            // Always prevent default to stop scrolling, even if throttled
+            if (e.cancelable) e.preventDefault();
+
             const now = performance.now();
             if (now - lastMoveTime < MOVE_THROTTLE_MS) return;
             lastMoveTime = now;
@@ -460,7 +463,8 @@ class PuzzleGame {
 
     handleInputMove(e) {
         if (!this.isDragging) return;
-        e.preventDefault();
+        // preventDefault is already called in the throttled wrapper, but good to have here too if called directly
+        if (e.cancelable) e.preventDefault();
 
         const pos = this.getPointerPos(e);
         const col = Math.floor((pos.x - this.padding) / this.orbSize);
@@ -485,6 +489,12 @@ class PuzzleGame {
             return;
         }
 
+        // Update drag path visual immediately
+        // We don't need to redraw the whole board logic every move, just the visual state
+        // But for simplicity in this codebase, we just trigger a draw
+        // The draw() method sets a flag, so it won't actually render more than 60fps
+        this.draw();
+
         if (col >= 0 && col < this.cols && row >= 0 && row < this.rows) {
             const lastPos = this.dragPath[this.dragPath.length - 1];
             if (lastPos.row !== row || lastPos.col !== col) {
@@ -496,6 +506,7 @@ class PuzzleGame {
                     this.dragPath.push({ row, col });
                     this.selectedOrb = { row, col };
                     this.playSound('move');
+                    // Draw is already called above, but we need to ensure the board update is reflected
                     this.draw();
                 }
             }
