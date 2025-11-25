@@ -370,8 +370,10 @@ class PuzzleGame {
         const MOVE_THROTTLE_MS = 16; // ~60fps
 
         const throttledMove = (e) => {
-            // Always prevent default to stop scrolling, even if throttled
-            if (e.cancelable) e.preventDefault();
+            // Only prevent default if we are actually dragging, to allow scrolling otherwise
+            if (this.isDragging && e.cancelable) {
+                e.preventDefault();
+            }
 
             const now = performance.now();
             if (now - lastMoveTime < MOVE_THROTTLE_MS) return;
@@ -563,13 +565,10 @@ class PuzzleGame {
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-        // キャンバスの表示サイズと内部解像度の比率を考慮
-        const scaleX = this.canvas.width / rect.width;
-        const scaleY = this.canvas.height / rect.height;
-
+        // Canvas coordinates in CSS pixels (logic uses CSS pixels)
         return {
-            x: (clientX - rect.left) * scaleX,
-            y: (clientY - rect.top) * scaleY
+            x: clientX - rect.left,
+            y: clientY - rect.top
         };
     }
 
@@ -732,15 +731,17 @@ class PuzzleGame {
 
         const color = this.orbColors[type].glow;
 
-        // Reduced particle count to 3
-        for (let i = 0; i < 3; i++) {
+        // Reduced particle count to 2 for mobile performance
+        const particleCount = window.innerWidth < 768 ? 2 : 5;
+
+        for (let i = 0; i < particleCount; i++) {
             const particle = document.createElement('div');
             particle.className = 'particle';
             particle.style.left = `${absoluteX - rect.left}px`;
             particle.style.top = `${absoluteY - rect.top}px`;
             particle.style.background = color;
 
-            const angle = (Math.PI * 2 * i) / 3;
+            const angle = (Math.PI * 2 * i) / particleCount;
             const distance = 30 + Math.random() * 15;
             const tx = Math.cos(angle) * distance;
             const ty = Math.sin(angle) * distance;

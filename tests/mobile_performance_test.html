@@ -89,7 +89,12 @@
 
         async function runTest() {
             try {
-                log("Initializing Game...");
+                // Mock High DPR for Mobile Simulation
+                Object.defineProperty(window, 'devicePixelRatio', {
+                    get: function () { return 3; } // Simulate high-res mobile screen
+                });
+
+                log("Initializing Game (Simulated DPR: 3)...");
                 const game = new PuzzleGame();
 
                 // Wait for initialization
