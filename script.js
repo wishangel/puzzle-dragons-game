@@ -378,9 +378,12 @@ class PuzzleGame {
 
         window.addEventListener('mousemove', throttledMove);
         window.addEventListener('touchmove', throttledMove, { passive: false });
+        // Add canvas specific touch listeners for better mobile support
+        this.canvas.addEventListener('touchmove', throttledMove, { passive: false });
 
         window.addEventListener('mouseup', () => this.handleInputEnd());
         window.addEventListener('touchend', () => this.handleInputEnd());
+        this.canvas.addEventListener('touchend', () => this.handleInputEnd());
     }
 
     toggleEditMode() {
