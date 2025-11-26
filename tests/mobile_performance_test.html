@@ -157,7 +157,22 @@
                     log("PASS: Input processing is efficient.", "pass");
                 }
 
-                // 2. Check Event Listeners
+                // 2. Stress Test: Resize Event Listener Accumulation
+                log("Running Resize Stress Test...");
+                const preResizeTime = performance.now();
+                for (let i = 0; i < 20; i++) {
+                    window.dispatchEvent(new Event('resize'));
+                }
+                const resizeTime = performance.now() - preResizeTime;
+                log(`Resize Stress Test Time: ${resizeTime.toFixed(2)}ms`);
+
+                if (resizeTime > 100) { // Arbitrary threshold, but high value indicates heavy work on resize
+                    log("WARN: Resize handling is slow. Check for heavy re-initialization.", "warn");
+                } else {
+                    log("PASS: Resize handling is efficient.", "pass");
+                }
+
+                // 3. Check Event Listeners
                 log("Checking Event Listeners...");
                 if (game.isDragging !== undefined) {
                     log("PASS: Game instance is accessible.", "pass");

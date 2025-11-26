@@ -88,11 +88,125 @@ class PuzzleGame {
         this.loadImages();
         this.initBGM();
         this.setupCanvas();
+        this.setupDOMListeners(); // Event listeners setup once
         this.setupEventListeners();
         this.initBoard();
         this.updateHighScoreDisplay();
         this.startRenderLoop();
         this.draw();
+    }
+
+    setupDOMListeners() {
+        document.querySelectorAll('.orb-option input').forEach(checkbox => {
+            checkbox.addEventListener('change', () => this.updateAvailableOrbs());
+        });
+
+        // ボードサイズ変更
+        const boardSizeSelect = document.getElementById('board-size');
+        if (boardSizeSelect) {
+            boardSizeSelect.addEventListener('change', (e) => {
+                const size = parseInt(e.target.value);
+                this.cols = size;
+                this.rows = size - 1;
+                this.setupCanvas();
+                this.initBoard();
+                this.draw();
+            });
+        }
+
+        // リセットボタン
+        const resetBtn = document.getElementById('reset-board');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                this.initBoard();
+                this.draw();
+            });
+        }
+
+        // タイムアタックモードボタン
+        const timeAttackBtn = document.getElementById('time-attack-btn');
+        if (timeAttackBtn) {
+            timeAttackBtn.addEventListener('click', () => {
+                if (this.timeAttackMode) {
+                    this.stopTimeAttack();
+                } else {
+                    this.startTimeAttack();
+                }
+            });
+        }
+
+        // スキルボタン
+        const skill1Btn = document.getElementById('skill-1');
+        const skill2Btn = document.getElementById('skill-2');
+        if (skill1Btn) {
+            skill1Btn.addEventListener('click', () => this.useSkill1());
+        }
+        if (skill2Btn) {
+            skill2Btn.addEventListener('click', () => this.useSkill2());
+        }
+
+        // アシストルートボタン
+        const assistRouteBtn = document.getElementById('assist-route-btn');
+        if (assistRouteBtn) {
+            assistRouteBtn.addEventListener('click', () => this.showAssistRoute());
+        }
+
+        // 画像読み込みボタン
+        const loadImageBtn = document.getElementById('load-image-btn');
+        const boardImageInput = document.getElementById('board-image-input');
+        if (loadImageBtn && boardImageInput) {
+            loadImageBtn.addEventListener('click', () => boardImageInput.click());
+            boardImageInput.addEventListener('change', (e) => this.handleImageUpload(e));
+        }
+
+        // 盤面編集モードボタン
+        const editBoardBtn = document.getElementById('edit-board-btn');
+        if (editBoardBtn) {
+            const handleToggle = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.toggleEditMode();
+            };
+            editBoardBtn.addEventListener('click', handleToggle);
+            editBoardBtn.addEventListener('touchend', handleToggle, { passive: false });
+        }
+
+        // 編集パレットの選択
+        const paletteOrbs = document.querySelectorAll('.palette-orb');
+        paletteOrbs.forEach(orb => {
+            const handleOrbSelect = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // アクティブ状態の切り替え
+                paletteOrbs.forEach(o => {
+                    o.classList.remove('active');
+                    o.style.border = 'none';
+                });
+                const target = e.currentTarget;
+                target.classList.add('active');
+                target.style.border = '2px solid yellow';
+
+                this.selectedEditOrb = target.dataset.type;
+            };
+            orb.addEventListener('click', handleOrbSelect);
+            orb.addEventListener('touchend', handleOrbSelect, { passive: false });
+        });
+
+        // サウンドトグル
+        const soundToggle = document.getElementById('sound-toggle');
+        if (soundToggle) {
+            soundToggle.addEventListener('change', (e) => {
+                this.soundEnabled = e.target.checked;
+            });
+        }
+
+        // ウィンドウリサイズ
+        window.addEventListener('resize', () => {
+            this.setupCanvas();
+            this.draw();
+        });
+        console.log('[DEBUG] setupDOMListeners completed');
     }
 
     loadImages() {
@@ -220,16 +334,6 @@ class PuzzleGame {
 
     setupCanvas() {
         const container = this.canvas.parentElement;
-        const containerWidth = Math.min(container.clientWidth, 600);
-
-        // ドロップのサイズを計算（幅基準）
-        this.orbSize = (containerWidth - this.padding * 2) / this.cols;
-
-        // 高さは行数に基づいて計算
-        const containerHeight = this.orbSize * this.rows + this.padding * 2;
-
-        // Set real pixel size based on DPR
-        this.canvas.width = containerWidth * this.dpr;
         this.canvas.height = containerHeight * this.dpr;
 
         // Scale context back to CSS pixels
@@ -247,7 +351,9 @@ class PuzzleGame {
                 }
             });
         }
+    }
 
+    setupDOMListeners() {
         document.querySelectorAll('.orb-option input').forEach(checkbox => {
             checkbox.addEventListener('change', () => this.updateAvailableOrbs());
         });
