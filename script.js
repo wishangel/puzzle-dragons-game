@@ -927,8 +927,8 @@ class PuzzleGame {
     startRenderLoop() {
         const loop = () => {
             if (this.needsRedraw) {
-                this.render();
                 this.needsRedraw = false;
+                this.render();
             }
             requestAnimationFrame(loop);
         };
