@@ -28,6 +28,7 @@ class PuzzleGame {
 
         // ゲーム状態
         this.board = [];
+        this.particles = []; // Canvas particles
         this.selectedOrb = null;
         this.isDragging = false;
         this.dragPath = [];
@@ -73,7 +74,7 @@ class PuzzleGame {
         this.scoreEl = null;
         this.comboEl = null;
         this.highScoreNormalEl = null;
-        this.highScoreTimeAttackEl = null;
+        this.highScoreTimeAttackEl = document.getElementById('high-score-timeattack');
 
         this.init();
     }
@@ -97,6 +98,7 @@ class PuzzleGame {
     }
 
     setupDOMListeners() {
+        console.log('[DEBUG] setupDOMListeners started');
         document.querySelectorAll('.orb-option input').forEach(checkbox => {
             checkbox.addEventListener('change', () => this.updateAvailableOrbs());
         });
@@ -334,6 +336,15 @@ class PuzzleGame {
 
     setupCanvas() {
         const container = this.canvas.parentElement;
+        const containerWidth = Math.min(container.clientWidth, 600);
+
+        // ドロップのサイズを計算（幅基準）
+        this.orbSize = (containerWidth - this.padding * 2) / this.cols;
+
+        // 高さは行数に基づいて計算
+        const containerHeight = this.orbSize * this.rows + this.padding * 2;
+
+        this.canvas.width = containerWidth * this.dpr;
         this.canvas.height = containerHeight * this.dpr;
 
         // Scale context back to CSS pixels
@@ -830,35 +841,54 @@ class PuzzleGame {
     createParticles(row, col, type) {
         const x = this.padding + col * this.orbSize + this.orbSize / 2;
         const y = this.padding + row * this.orbSize + this.orbSize / 2;
-
-        const rect = this.canvas.getBoundingClientRect();
-        const absoluteX = rect.left + x;
-        const absoluteY = rect.top + y;
-
         const color = this.orbColors[type].glow;
 
-        // Reduced particle count to 2 for mobile performance
-        const particleCount = window.innerWidth < 768 ? 2 : 5;
+        // Reduced particle count for mobile
+        const particleCount = window.innerWidth < 768 ? 5 : 10;
 
         for (let i = 0; i < particleCount; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            particle.style.left = `${absoluteX - rect.left}px`;
-            particle.style.top = `${absoluteY - rect.top}px`;
-            particle.style.background = color;
-
             const angle = (Math.PI * 2 * i) / particleCount;
-            const distance = 30 + Math.random() * 15;
-            const tx = Math.cos(angle) * distance;
-            const ty = Math.sin(angle) * distance;
+            const speed = 2 + Math.random() * 2;
 
-            particle.style.setProperty('--tx', `${tx}px`);
-            particle.style.setProperty('--ty', `${ty}px`);
-
-            this.particleContainer.appendChild(particle);
-
-            setTimeout(() => particle.remove(), 800);
+            this.particles.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: 1.0,
+                decay: 0.02 + Math.random() * 0.03,
+                color: color,
+                size: 3 + Math.random() * 3
+            });
         }
+    }
+
+    updateParticles() {
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const p = this.particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= p.decay;
+
+            if (p.life <= 0) {
+                this.particles.splice(i, 1);
+            }
+        }
+        if (this.particles.length > 0) {
+            this.needsRedraw = true;
+        }
+    }
+
+    drawParticles() {
+        this.ctx.save();
+        this.particles.forEach(p => {
+            this.ctx.globalAlpha = p.life;
+            this.ctx.fillStyle = p.color;
+            this.ctx.beginPath();
+            this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+        this.ctx.restore();
     }
 
     async dropOrbs() {
@@ -947,6 +977,9 @@ class PuzzleGame {
 
         this.drawDragPath();
         this.drawAssistRoute();
+
+        this.updateParticles();
+        this.drawParticles();
     }
 
     drawOrb(x, y, type, size) {
@@ -1101,6 +1134,12 @@ class PuzzleGame {
             gain.connect(this.audioContext.destination);
             osc.start();
             osc.stop(this.audioContext.currentTime + duration);
+
+            // Cleanup nodes after sound finishes
+            setTimeout(() => {
+                osc.disconnect();
+                gain.disconnect();
+            }, duration * 1000 + 100);
         };
 
         switch (type) {
