@@ -10,11 +10,23 @@
     <link rel="stylesheet" href="palette-styles.css">
     <link rel="stylesheet" href="orb-preview-override.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Outfit:wght@400;600;800&display=swap"
-        rel="stylesheet">
-</head>
+    <!DOCTYPE html>
+    <html lang="ja">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="description" content="パズル&ドラゴンズ風のパズルゲーム - たまを動かして連鎖させよう！">
+        <title>パズル&ドラゴンズ風パズル</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="palette-styles.css">
+        <link rel="stylesheet" href="orb-preview-override.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Outfit:wght@400;600;800&display=swap"
+            rel="stylesheet">
+    </head>
 
 <body>
     <div class="container">
@@ -104,6 +116,10 @@
                     <label class="setting-item">
                         <span>BGM</span>
                         <input type="checkbox" id="bgm-toggle">
+                    </label>
+                    <label class="setting-item">
+                        <span>操作時間(秒)</span>
+                        <input type="number" id="move-time" value="6" min="1" max="60" style="width: 50px;">
                     </label>
                 </div>
             </div>

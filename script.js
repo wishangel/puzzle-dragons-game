@@ -385,6 +385,21 @@ class PuzzleGame {
             this.draw();
         });
 
+        // 操作時間設定
+        const moveTimeInput = document.getElementById('move-time');
+        if (moveTimeInput) {
+            // 初期値を設定
+            moveTimeInput.value = this.maxMoveTime / 1000;
+
+            moveTimeInput.addEventListener('change', (e) => {
+                let val = parseFloat(e.target.value);
+                if (val < 1) val = 1;
+                if (val > 60) val = 60;
+                this.maxMoveTime = val * 1000;
+                e.target.value = val;
+            });
+        }
+
         // タイムアタックモードボタン
         const timeAttackBtn = document.getElementById('time-attack-btn');
         if (timeAttackBtn) {
