@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle Game - Test Runner</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+        }
+
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 4px solid;
+        }
+
+        .pass {
+            border-color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        .fail {
+            border-color: #ff0000;
+            background: rgba(255, 0, 0, 0.1);
+            color: #ff6666;
+        }
+
+        .summary {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid #00ff00;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Puzzle Game Test Suite</h1>
+    <div id="results"></div>
+    <div id="summary" class="summary"></div>
+
+    <!-- Load game script -->
+    <script src="../script.js"></script>
+    <!-- Load test suite -->
+    <script src="test_suite.js"></script>
+</body>
+
+</html>

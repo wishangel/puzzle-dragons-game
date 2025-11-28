@@ -97,119 +97,7 @@ class PuzzleGame {
         this.draw();
     }
 
-    setupDOMListeners() {
-        console.log('[DEBUG] setupDOMListeners started');
-        document.querySelectorAll('.orb-option input').forEach(checkbox => {
-            checkbox.addEventListener('change', () => this.updateAvailableOrbs());
-        });
 
-        // ボードサイズ変更
-        const boardSizeSelect = document.getElementById('board-size');
-        if (boardSizeSelect) {
-            boardSizeSelect.addEventListener('change', (e) => {
-                const size = parseInt(e.target.value);
-                this.cols = size;
-                this.rows = size - 1;
-                this.setupCanvas();
-                this.initBoard();
-                this.draw();
-            });
-        }
-
-        // リセットボタン
-        const resetBtn = document.getElementById('reset-board');
-        if (resetBtn) {
-            resetBtn.addEventListener('click', () => {
-                this.initBoard();
-                this.draw();
-            });
-        }
-
-        // タイムアタックモードボタン
-        const timeAttackBtn = document.getElementById('time-attack-btn');
-        if (timeAttackBtn) {
-            timeAttackBtn.addEventListener('click', () => {
-                if (this.timeAttackMode) {
-                    this.stopTimeAttack();
-                } else {
-                    this.startTimeAttack();
-                }
-            });
-        }
-
-        // スキルボタン
-        const skill1Btn = document.getElementById('skill-1');
-        const skill2Btn = document.getElementById('skill-2');
-        if (skill1Btn) {
-            skill1Btn.addEventListener('click', () => this.useSkill1());
-        }
-        if (skill2Btn) {
-            skill2Btn.addEventListener('click', () => this.useSkill2());
-        }
-
-        // アシストルートボタン
-        const assistRouteBtn = document.getElementById('assist-route-btn');
-        if (assistRouteBtn) {
-            assistRouteBtn.addEventListener('click', () => this.showAssistRoute());
-        }
-
-        // 画像読み込みボタン
-        const loadImageBtn = document.getElementById('load-image-btn');
-        const boardImageInput = document.getElementById('board-image-input');
-        if (loadImageBtn && boardImageInput) {
-            loadImageBtn.addEventListener('click', () => boardImageInput.click());
-            boardImageInput.addEventListener('change', (e) => this.handleImageUpload(e));
-        }
-
-        // 盤面編集モードボタン
-        const editBoardBtn = document.getElementById('edit-board-btn');
-        if (editBoardBtn) {
-            const handleToggle = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.toggleEditMode();
-            };
-            editBoardBtn.addEventListener('click', handleToggle);
-            editBoardBtn.addEventListener('touchend', handleToggle, { passive: false });
-        }
-
-        // 編集パレットの選択
-        const paletteOrbs = document.querySelectorAll('.palette-orb');
-        paletteOrbs.forEach(orb => {
-            const handleOrbSelect = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                // アクティブ状態の切り替え
-                paletteOrbs.forEach(o => {
-                    o.classList.remove('active');
-                    o.style.border = 'none';
-                });
-                const target = e.currentTarget;
-                target.classList.add('active');
-                target.style.border = '2px solid yellow';
-
-                this.selectedEditOrb = target.dataset.type;
-            };
-            orb.addEventListener('click', handleOrbSelect);
-            orb.addEventListener('touchend', handleOrbSelect, { passive: false });
-        });
-
-        // サウンドトグル
-        const soundToggle = document.getElementById('sound-toggle');
-        if (soundToggle) {
-            soundToggle.addEventListener('change', (e) => {
-                this.soundEnabled = e.target.checked;
-            });
-        }
-
-        // ウィンドウリサイズ
-        window.addEventListener('resize', () => {
-            this.setupCanvas();
-            this.draw();
-        });
-        console.log('[DEBUG] setupDOMListeners completed');
-    }
 
     loadImages() {
         const imagesToLoad = Object.keys(this.orbColors).length;
@@ -370,20 +258,26 @@ class PuzzleGame {
         });
 
         // ボードサイズ変更
-        document.getElementById('board-size').addEventListener('change', (e) => {
-            const size = parseInt(e.target.value);
-            this.cols = size;
-            this.rows = size - 1;
-            this.setupCanvas();
-            this.initBoard();
-            this.draw();
-        });
+        const boardSizeEl = document.getElementById('board-size');
+        if (boardSizeEl) {
+            boardSizeEl.addEventListener('change', (e) => {
+                const size = parseInt(e.target.value);
+                this.cols = size;
+                this.rows = size - 1;
+                this.setupCanvas();
+                this.initBoard();
+                this.draw();
+            });
+        }
 
         // リセットボタン
-        document.getElementById('reset-board').addEventListener('click', () => {
-            this.initBoard();
-            this.draw();
-        });
+        const resetBoardEl = document.getElementById('reset-board');
+        if (resetBoardEl) {
+            resetBoardEl.addEventListener('click', () => {
+                this.initBoard();
+                this.draw();
+            });
+        }
 
         // 操作時間設定
         const moveTimeInput = document.getElementById('move-time');
@@ -491,6 +385,7 @@ class PuzzleGame {
     }
 
     setupEventListeners() {
+        // console.log('[DEBUG] setupEventListeners called');
         // マウス操作
         this.canvas.addEventListener('mousedown', (e) => this.handleInputStart(e));
 
@@ -502,6 +397,7 @@ class PuzzleGame {
         const MOVE_THROTTLE_MS = 16; // ~60fps
 
         const throttledMove = (e) => {
+            // console.log('[DEBUG] throttledMove called', e.type);
             // Only prevent default if we are actually dragging, to allow scrolling otherwise
             if (this.isDragging && e.cancelable) {
                 e.preventDefault();
@@ -558,6 +454,7 @@ class PuzzleGame {
     }
 
     handleInputStart(e) {
+        // console.log('[DEBUG] handleInputStart called', e.type);
         e.preventDefault();
         const pos = this.getPointerPos(e);
         const col = Math.floor((pos.x - this.padding) / this.orbSize);
@@ -597,8 +494,11 @@ class PuzzleGame {
 
     handleInputMove(e) {
         if (!this.isDragging) return;
+
         // preventDefault is already called in the throttled wrapper, but good to have here too if called directly
         if (e.cancelable) e.preventDefault();
+
+        // console.log('[DEBUG] handleInputMove called, isEditing:', this.isEditing);
 
         const pos = this.getPointerPos(e);
         const col = Math.floor((pos.x - this.padding) / this.orbSize);
@@ -633,9 +533,14 @@ class PuzzleGame {
             const lastPos = this.dragPath[this.dragPath.length - 1];
             if (lastPos.row !== row || lastPos.col !== col) {
                 if (Math.abs(lastPos.row - row) <= 1 && Math.abs(lastPos.col - col) <= 1) {
+                    // console.log(`[DEBUG] Swap attempt: (${lastPos.row},${lastPos.col}) -> (${row},${col})`);
+                    // console.log(`[DEBUG] Before: Source=${this.board[lastPos.row][lastPos.col]}, Target=${this.board[row][col]}`);
+
                     const temp = this.board[row][col];
                     this.board[row][col] = this.board[lastPos.row][lastPos.col];
                     this.board[lastPos.row][lastPos.col] = temp;
+
+                    // console.log(`[DEBUG] After: Source=${this.board[lastPos.row][lastPos.col]}, Target=${this.board[row][col]}`);
 
                     this.dragPath.push({ row, col });
                     this.selectedOrb = { row, col };
@@ -767,10 +672,11 @@ class PuzzleGame {
                 }, 500);
             }
         }
-
     }
 
     findMatches() {
+        // console.log('[DEBUG] findMatches called');
+        // console.log(JSON.stringify(this.board.map(row => row.map(cell => cell)))); // Log board state
         const matches = [];
 
         for (let row = 0; row < this.rows; row++) {
@@ -819,6 +725,7 @@ class PuzzleGame {
     }
 
     async clearMatches(matches) {
+        // console.log(`[DEBUG] clearMatches called with ${matches.length} matches`);
         // マッチしたドロップをソート（下から上、左から右の順）
         matches.sort((a, b) => {
             const getAnchor = (match) => {
@@ -850,6 +757,34 @@ class PuzzleGame {
             this.playSound('clear');
             this.draw();
             await this.sleep(300);
+        }
+    }
+
+    async dropOrbs() {
+        let dropped = false;
+
+        do {
+            dropped = false;
+
+            for (let row = this.rows - 2; row >= 0; row--) {
+                for (let col = 0; col < this.cols; col++) {
+                    if (this.board[row][col] !== null && this.board[row + 1][col] === null) {
+                        this.board[row + 1][col] = this.board[row][col];
+                        this.board[row][col] = null;
+                        dropped = true;
+                    }
+                }
+            }
+        } while (dropped);
+    }
+
+    fillBoard() {
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.cols; col++) {
+                if (this.board[row][col] === null) {
+                    this.board[row][col] = this.getRandomOrbType();
+                }
+            }
         }
     }
 
@@ -907,6 +842,7 @@ class PuzzleGame {
     }
 
     async dropOrbs() {
+        // console.log('[DEBUG] dropOrbs called');
         let dropped = false;
 
         do {
